@@ -1,0 +1,32 @@
+name: Native CSV frontend artifact
+on:
+  push:
+    branches: [ci/csv-frontend-artifact]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: b477077c20a44dbc86d69401089421eb5c11cbf5
+      - name: Verify source head
+        run: test "$(git rev-parse HEAD)" = b477077c20a44dbc86d69401089421eb5c11cbf5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+      - name: Build at the canonical CI path
+        run: |
+          node --version
+          npm ci --legacy-peer-deps --no-audit --no-fund
+          npm run buildfrontend
+          find frontend -type f -print0 | sort -z | xargs -0 sha256sum > frontend-sha256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: csv-frontend-b477077c
+          path: |
+            frontend/
+            frontend-sha256.txt
+          retention-days: 1
